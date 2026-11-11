@@ -61,6 +61,7 @@ class WindowTests(unittest.TestCase):
             route = True
             stops = 0
             updates = 0
+            polls = 0
 
             def stop(self):
                 self.route = None
@@ -68,6 +69,7 @@ class WindowTests(unittest.TestCase):
                 return []
 
             def poll(self):
+                self.polls += 1
                 return []
 
             def update(self, params):
@@ -205,8 +207,8 @@ class WindowTests(unittest.TestCase):
             self.assertEqual(float(ratio.get()), 4)
 
             def tick():
-                updates = session.updates
-                self.wait_for(root, lambda: session.updates > updates)
+                polls = session.polls
+                self.wait_for(root, lambda: session.polls > polls)
 
             def edit(value):
                 root.setvar(ratio.cget('textvariable'), value)
