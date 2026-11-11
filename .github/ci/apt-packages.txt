@@ -1,0 +1,16 @@
+build-essential
+ccache
+dpkg-dev
+python3
+python3-tk
+python3-gi
+gir1.2-gtk-3.0
+gir1.2-ayatanaappindicator3-0.1
+pulseaudio
+pulseaudio-utils
+libpulse0
+xvfb
+xauth
+dbus-x11
+imagemagick
+desktop-file-utils

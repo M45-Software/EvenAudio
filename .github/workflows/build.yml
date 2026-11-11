@@ -1,0 +1,82 @@
+name: Build, test and release
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deb:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    outputs:
+      release_tag: ${{ steps.release.outputs.release_tag }}
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.cache/ccache
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 100M
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cached build dependencies
+        uses: ./.github/actions/setup-build-deps
+        with:
+          packages-file: .github/ci/apt-packages.txt
+      - name: Restore compiler cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-v1-${{ runner.os }}-${{ runner.arch }}-ubuntu24.04-${{ hashFiles('Makefile', '.github/workflows/build.yml') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-v1-${{ runner.os }}-${{ runner.arch }}-ubuntu24.04-${{ hashFiles('Makefile', '.github/workflows/build.yml') }}-
+            ccache-v1-${{ runner.os }}-${{ runner.arch }}-ubuntu24.04-
+      - name: Build and test
+        run: |
+          bash -n packaging/build-deb.sh .github/actions/setup-build-deps/install.sh
+          desktop-file-validate packaging/evenaudio.desktop
+          make CC="ccache cc"
+          xvfb-run -a make test
+          xvfb-run -a python3 tests/integration_audio.py --gui
+          dbus-run-session -- xvfb-run -a python3 tests/integration_tray.py
+      - name: Compiler cache statistics
+        if: always()
+        run: |
+          if command -v ccache >/dev/null 2>&1; then ccache --show-stats; fi
+      - name: Package
+        run: |
+          version=$(cat VERSION)
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then test "$GITHUB_REF_NAME" = "v$version"; fi
+          bash packaging/build-deb.sh "$version"
+          cd dist
+          sha256sum -- *.deb > SHA256SUMS
+      - name: Install and check package
+        run: |
+          sudo apt-get install -y ./dist/*.deb
+          cd /tmp
+          evenaudio --help
+          /usr/bin/python3 -c 'import sys; sys.path.insert(0, "/usr/lib/evenaudio"); from engine import DSP; DSP().close()'
+          sudo apt-get remove -y evenaudio
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evenaudio-deb
+          path: dist/*
+      - name: Publish tagged release
+        id: release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --notes-file "docs/releases/$GITHUB_REF_NAME.md"
+          printf 'release_tag=%s\n' "$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+  apt:
+    needs: deb
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/publish-apt.yml
+    with:
+      release_tag: ${{ needs.deb.outputs.release_tag }}
+    secrets:
+      M45_APT_DEPLOY_KEY: ${{ secrets.M45_APT_DEPLOY_KEY }}

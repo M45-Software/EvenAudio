@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=EvenAudio
+Comment=Seven-band desktop audio compressor
+Exec=evenaudio
+Icon=evenaudio
+Terminal=false
+Categories=AudioVideo;Audio;Mixer;
+Keywords=audio;compressor;multiband;volume;
+StartupNotify=false

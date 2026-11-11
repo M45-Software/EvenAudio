@@ -10,7 +10,24 @@ audio routing. No pip packages, lookahead buffer, or separate peak limiter.
 The interface starts in dark mode. Use the **Dark mode** switch to select light
 mode; this preference is remembered for the next launch. [Light-mode preview](preview-light.png).
 
-## Run
+## Install from the M45 APT repository
+
+For Ubuntu 24.04 (amd64), add the signed repository once:
+
+```sh
+curl -fLO https://m45software.com/apt/m45-software-archive-keyring_1.0_all.deb
+sudo apt install ./m45-software-archive-keyring_1.0_all.deb
+sudo apt update
+sudo apt install evenaudio
+```
+
+Launch **EvenAudio** from the application menu or run `evenaudio`. The package
+includes the compiled audio engine and installs its runtime dependencies and
+recommended tray support. It uses your existing PulseAudio or PipeWire audio
+service. Updates arrive through APT. Remove it with `sudo apt remove evenaudio`;
+per-user preferences stay in `~/.config/evenaudio`.
+
+## Run from source
 
 On Debian/Ubuntu, install the build and runtime dependencies:
 
@@ -219,6 +236,23 @@ output gain → selected output.
 Audio access uses the
 [PulseAudio simple API](https://freedesktop.org/software/pulseaudio/doxygen/simple.html).
 Do not run the app as root.
+
+## Debian builds and releases
+
+```sh
+sudo apt install build-essential dpkg-dev
+bash packaging/build-deb.sh
+sudo apt install ./dist/evenaudio_0.1.0_amd64.deb
+```
+
+`VERSION` is the package version. CI uses Ubuntu 24.04, caches downloaded APT
+archives with the same setup action as the other M45 projects, and uses ccache
+for the native DSP. APT still refreshes indexes and verifies current dependency
+versions on cache hits. Pull requests and main pushes build and test packages;
+pushing a matching `vVERSION` tag also creates a GitHub release with SHA256SUMS
+and publishes it through a package-restricted SSH receiver. The archive signing
+key stays on the server. The repository secret `M45_APT_DEPLOY_KEY` holds the
+restricted deployment key; `packaging/apt/ssh_known_hosts` pins the server key.
 
 ## Development checks
 
