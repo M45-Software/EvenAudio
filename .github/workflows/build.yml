@@ -59,6 +59,10 @@ jobs:
           cd /tmp
           evenaudio --help
           /usr/bin/python3 -c 'import sys; sys.path.insert(0, "/usr/lib/evenaudio"); from engine import DSP; DSP().close()'
+          test -f /usr/lib/evenaudio/assets/evenaudio.svg
+          mkdir -p /tmp/evenaudio-package-tests
+          cp "$GITHUB_WORKSPACE/tests/integration_tray.py" /tmp/evenaudio-package-tests/
+          PYTHONPATH=/usr/lib/evenaudio dbus-run-session -- xvfb-run -a python3 /tmp/evenaudio-package-tests/integration_tray.py
           sudo apt-get remove -y evenaudio
       - uses: actions/upload-artifact@v4
         with:

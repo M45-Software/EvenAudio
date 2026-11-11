@@ -14,6 +14,7 @@ mkdir -p "$stage/pkg/DEBIAN" "$stage/pkg/usr/lib/evenaudio" \
 install -m 0644 "$root"/{evenaudio,engine,routing,presets,interface,appearance,tray,window_preferences}.py \
   "$stage/pkg/usr/lib/evenaudio/"
 install -m 0644 "$root/libevenaudio.so" "$stage/pkg/usr/lib/evenaudio/"
+install -D -m 0644 "$root/assets/evenaudio.svg" "$stage/pkg/usr/lib/evenaudio/assets/evenaudio.svg"
 strip --strip-unneeded "$stage/pkg/usr/lib/evenaudio/libevenaudio.so"
 install -D -m 0755 "$root/packaging/evenaudio" "$stage/pkg/usr/bin/evenaudio"
 install -D -m 0644 "$root/packaging/evenaudio.desktop" "$stage/pkg/usr/share/applications/evenaudio.desktop"
