@@ -47,7 +47,8 @@ def main():
     running, bypassed = False, False
 
     def wait(predicate, label):
-        deadline = time.monotonic() + 6
+        # Shared CI runners can take several seconds to start GTK and D-Bus.
+        deadline = time.monotonic() + 20
         while time.monotonic() < deadline:
             while GLib.MainContext.default().pending():
                 GLib.MainContext.default().iteration(False)

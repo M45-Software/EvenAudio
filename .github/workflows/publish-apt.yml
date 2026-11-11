@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Published release tag to deploy (for example v0.1.0)
+        description: Published release tag to deploy (for example v0.1.1)
         type: string
         required: false
       check_only:
@@ -72,7 +72,7 @@ jobs:
           tag = os.environ['RELEASE_TAG']
           match = re.fullmatch(r'v([0-9]+\.[0-9]+\.[0-9]+)', tag)
           if not match:
-              raise SystemExit('A release tag such as v0.1.0 is required.')
+              raise SystemExit('A release tag such as v0.1.1 is required.')
           version = match[1]
           release = json.loads(subprocess.check_output(['gh', 'release', 'view', tag, '--json', 'isDraft']))
           if release['isDraft']:

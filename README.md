@@ -242,7 +242,7 @@ Do not run the app as root.
 ```sh
 sudo apt install build-essential dpkg-dev
 bash packaging/build-deb.sh
-sudo apt install ./dist/evenaudio_0.1.0_amd64.deb
+sudo apt install ./dist/evenaudio_0.1.1_amd64.deb
 ```
 
 `VERSION` is the package version. CI uses Ubuntu 24.04, caches downloaded APT
