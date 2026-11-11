@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -35,6 +36,20 @@ class PreferenceTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get('DISPLAY'), 'Needs X display (use xvfb-run)')
 class WindowTests(unittest.TestCase):
+    def wait_for(self, root, predicate):
+        """Process Tk events until the expected state arrives, bounded for CI."""
+        deadline = time.monotonic() + 5
+
+        def check():
+            if predicate() or time.monotonic() >= deadline:
+                root.quit()
+            else:
+                root.after(20, check)
+
+        root.after(0, check)
+        root.mainloop()
+        self.assertTrue(predicate(), 'Timed out waiting for the GUI state')
+
     def exercise(self, scenario):
         import tkinter as tk
         import interface
@@ -133,15 +148,14 @@ class WindowTests(unittest.TestCase):
             self.assertEqual(root.state(), 'withdrawn')
             self.assertTrue(session.route)
             tray.actions = ['show', 'bypass']
-            root.after(150, root.quit)
-            root.mainloop()
+            self.wait_for(root, lambda: root.state() == 'normal'
+                          and getattr(session, 'bypassed', False) and session.updates > 1)
             self.assertEqual(root.state(), 'normal')
             self.assertTrue(session.bypassed)
             self.assertGreater(session.updates, 1)
             close()
             tray.actions = ['toggle']
-            root.after(150, root.quit)
-            root.mainloop()
+            self.wait_for(root, lambda: not session.route)
             self.assertFalse(session.route)
             # Stop uses the same GUI path as the button; compensate cleanup count.
             session.stops -= 1
@@ -158,8 +172,7 @@ class WindowTests(unittest.TestCase):
             tray.connected = True
             close()
             tray.connected = False
-            root.after(150, root.quit)
-            root.mainloop()
+            self.wait_for(root, lambda: root.state() == 'normal')
             self.assertEqual(root.state(), 'normal')
             self.assertTrue(session.route)
         self.exercise(scenario)
@@ -192,8 +205,8 @@ class WindowTests(unittest.TestCase):
             self.assertEqual(float(ratio.get()), 4)
 
             def tick():
-                root.after(130, root.quit)
-                root.mainloop()
+                updates = session.updates
+                self.wait_for(root, lambda: session.updates > updates)
 
             def edit(value):
                 root.setvar(ratio.cget('textvariable'), value)
